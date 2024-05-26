@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rich Text Editor with Color Palette</title>
+<style>
+    .editor {
+        border: 1px solid #ccc;
+        padding: 10px;
+        min-height: 200px;
+    }
+    .toolbar button, .toolbar select {
+        margin-right: 5px;
+    }
+    .color-palette {
+        display: inline-block;
+        position: relative;
+    }
+    .color-picker {
+        position: absolute;
+        display: none;
+        top: 25px;
+        left: 0;
+        background: #fff;
+        border: 1px solid #ccc;
+        padding: 5px;
+        z-index: 100;
+    }
+    .color-picker input[type="color"] {
+        width: 100%;
+    }
+    .color-picker button {
+        margin-top: 5px;
+        margin-right: 5px;
+    }
+</style>
+</head>
+<body>
+<div class="toolbar">
+    <button onclick="applyStyle('fontWeight', 'bold')">Bold</button>
+    <button onclick="applyStyle('fontStyle', 'italic')">Italic</button>
+    <button onclick="applyStyle('textDecoration', 'underline')">Underline</button>
+    <div class="color-palette">
+        <button onclick="toggleColorPicker()">Text Color</button>
+        <div class="color-picker">
+            <input type="color" id="colorInput">
+            <button onclick="confirmTextColor()">Confirm</button>
+            <button onclick="cancelTextColor()">Cancel</button>
+        </div>
+    </div>
+    <select onchange="applyFontSize(this.value)">
+        <option value="">Font Size</option>
+        <option value="12px">12px</option>
+        <option value="14px">14px</option>
+        <option value="16px">16px</option>
+        <option value="18px">18px</option>
+        <option value="20px">20px</option>
+    </select>
+</div>
+<div class="editor" contenteditable="true" id="editor">
+    Start typing here...
+</div>
+
+<script>
+    const editor = document.getElementById('editor');
+    const colorPicker = document.querySelector('.color-picker');
+    const colorInput = document.getElementById('colorInput');
+    
+
+    function getSelectionRange() {
+        let selectedRange = null;
+        const selection = window.getSelection();
+        console.log('----selection-----',selection);
+        if (selection.rangeCount > 0) {
+            selectedRange = selection.getRangeAt(0);
+        }
+        return selectedRange;
+    }
+
+    function updateSelectionRange(element) {
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        if (element) {
+            let newRange = document.createRange();
+            newRange.selectNodeContents(element);
+            newRange.collapse();
+            selection.addRange(newRange);
+        }
+    }
+
+    function applyStyle(styleName, value) {
+        let curRange=getSelectionRange();
+        if (curRange && editor.contains(curRange.commonAncestorContainer)) {
+            const span = document.createElement('span');
+            span.style[styleName] = value;
+            span.appendChild(curRange.extractContents());
+            curRange.insertNode(span);
+            updateSelectionRange(span);
+        } else {
+            alert('Please make a selection within the editor.');
+        }
+    }
+
+    function toggleColorPicker() {
+        if (colorPicker.style.display === 'none' || colorPicker.style.display === '') {
+            colorPicker.style.display = 'block';
+        } else {
+            colorPicker.style.display = 'none';
+        }
+    }
+
+    function confirmTextColor() {
+        let curRange=getSelectionRange();
+        if (curRange && editor.contains(curRange.commonAncestorContainer)) {
+            const color = colorInput.value;
+            const span = document.createElement('span');
+            span.style.color = color;
+            span.appendChild(selectedRange.extractContents());
+            selectedRange.insertNode(span);
+
+            selectedRange.selectNodeContents(span);
+            selectedRange.collapse(false);
+
+            restoreSelection();
+            colorPicker.style.display = 'none';
+        } else {
+            alert('Please make a selection within the editor.');
+        }
+    }
+
+    function cancelTextColor() {
+        colorPicker.style.display = 'none';
+    }
+
+    function applyFontSize(fontSize) {
+        saveSelection();
+        if (selectedRange && editor.contains(selectedRange.commonAncestorContainer)) {
+            const span = document.createElement('span');
+            span.style.fontSize = fontSize;
+            span.appendChild(selectedRange.extractContents());
+            selectedRange.insertNode(span);
+
+            selectedRange.selectNodeContents(span);
+            selectedRange.collapse(false);
+
+            restoreSelection();
+        } else {
+            alert('Please make a selection within the editor.');
+        }
+    }
+</script>
+</body>
+</html>
