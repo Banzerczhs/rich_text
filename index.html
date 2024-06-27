@@ -4,48 +4,83 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rich Text Editor with Color Palette</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
     .editor {
         border: 1px solid #ccc;
         padding: 10px;
         min-height: 200px;
+        position: relative;
+    }
+    .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        border-bottom: 1px solid #ccc;
+        padding: 5px;
+        background-color: #f5f5f5;
     }
     .toolbar button, .toolbar select {
         margin-right: 5px;
+        padding: 5px 10px;
+        border: none;
+        background-color: #fff;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .toolbar button:hover, .toolbar select:hover {
+        background-color: #e0e0e0;
+    }
+    .toolbar i {
+        pointer-events: none;
     }
     .color-palette {
-        display: inline-block;
         position: relative;
     }
     .color-picker {
         position: absolute;
         display: none;
-        top: 25px;
+        top: 30px;
         left: 0;
         background: #fff;
         border: 1px solid #ccc;
-        padding: 5px;
+        padding: 10px;
         z-index: 100;
     }
-    .color-picker input[type="color"] {
-        width: 100%;
-    }
     .color-picker button {
-        margin-top: 5px;
-        margin-right: 5px;
+        padding: 5px 10px;
+        border: none;
+        background-color: #007bff;
+        color: #fff;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .color-picker button:hover {
+        background-color: #0056b3;
+    }
+    .char-counter {
+        position: absolute;
+        right: 10px;
+        bottom: 10px;
+        font-size: 12px;
+        color: #555;
+    }
+    .iro-picker {
+        width: 150px;
+        height: 150px;
     }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@jaames/iro@5.5.2/dist/iro.min.js"></script>
 </head>
 <body>
 <div class="toolbar">
-    <button onclick="applyStyle('fontWeight', 'bold')">Bold</button>
-    <button onclick="applyStyle('fontStyle', 'italic')">Italic</button>
-    <button onclick="applyStyle('textDecoration', 'underline')">Underline</button>
+    <button onclick="applyStyle('fontWeight', 'bold')"><i class="fas fa-bold"></i></button>
+    <button onclick="applyStyle('fontStyle', 'italic')"><i class="fas fa-italic"></i></button>
+    <button onclick="applyStyle('textDecoration', 'underline')"><i class="fas fa-underline"></i></button>
+    <button onclick="applyStyle('textDecoration', 'line-through')"><i class="fas fa-strikethrough"></i></button>
     <div class="color-palette">
-        <button onclick="toggleColorPicker()">Text Color</button>
+        <button onclick="toggleColorPicker()"><i class="fas fa-palette"></i></button>
         <div class="color-picker">
-            <input type="color" id="colorInput" onchange="confirmTextColor()">
-            <!-- <button onclick="confirmTextColor()">Confirm</button> -->
+            <div id="colorPicker"></div>
             <button onclick="cancelTextColor()">Cancel</button>
         </div>
     </div>
@@ -58,24 +93,51 @@
         <option value="20px">20px</option>
     </select>
 </div>
-<div class="editor" contenteditable="true" id="editor">
+<div class="editor" contenteditable="true" id="editor" oninput="updateCharCount()">
     Start typing here...
+    <div class="char-counter" id="charCounter">0/5000</div>
 </div>
 
 <script>
     const editor = document.getElementById('editor');
-    const colorPicker = document.querySelector('.color-picker');
-    const colorInput = document.getElementById('colorInput');
-    
+    const colorPickerElement = document.getElementById('colorPicker');
+    const colorPickerContainer = document.querySelector('.color-picker');
+    const charCounter = document.getElementById('charCounter');
+    const maxChars = 5000;
+
+    let savedRange = null;
+
+    const colorPicker = new iro.ColorPicker("#colorPicker", {
+        width: 150,
+        color: "#f00"
+    });
+
+    colorPicker.on('color:change', function(color) {
+        applyStyle('color', color.hexString);
+    });
 
     function getSelectionRange() {
         let selectedRange = null;
         const selection = window.getSelection();
-        console.log('----selection-----',selection);
         if (selection.rangeCount > 0) {
             selectedRange = selection.getRangeAt(0);
         }
         return selectedRange;
+    }
+
+    function saveSelection() {
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+            savedRange = selection.getRangeAt(0);
+        }
+    }
+
+    function restoreSelection() {
+        const selection = window.getSelection();
+        if (savedRange) {
+            selection.removeAllRanges();
+            selection.addRange(savedRange);
+        }
     }
 
     function updateSelectionRange(element) {
@@ -90,39 +152,49 @@
     }
 
     function applyStyle(styleName, value) {
-        let curRange=getSelectionRange();
+        restoreSelection();
+        let curRange = getSelectionRange();
         if (curRange && editor.contains(curRange.commonAncestorContainer)) {
             const span = document.createElement('span');
-            span.style[styleName] = value;
+            if (styleName === 'textDecoration' && span.style[styleName] !== '') {
+                span.style[styleName] = span.style[styleName].includes(value) ? '' : value;
+            } else {
+                span.style[styleName] = value;
+            }
             span.appendChild(curRange.extractContents());
             curRange.insertNode(span);
-            updateSelectionRange(span);
+            // updateSelectionRange(span);
+            saveSelection();
         } else {
             alert('Please make a selection within the editor.');
         }
     }
 
     function toggleColorPicker() {
-        if (colorPicker.style.display === 'none' || colorPicker.style.display === '') {
-            colorPicker.style.display = 'block';
+        if (colorPickerContainer.style.display === 'none' || colorPickerContainer.style.display === '') {
+            colorPickerContainer.style.display = 'block';
         } else {
-            colorPicker.style.display = 'none';
+            colorPickerContainer.style.display = 'none';
         }
     }
 
-    function confirmTextColor() {
-        const color = colorInput.value;
-        applyStyle('color',color);
-        console.log('color',colorPicker);
-        colorPicker.style.display = 'none';
-    }
-
     function cancelTextColor() {
-        colorPicker.style.display = 'none';
+        colorPickerContainer.style.display = 'none';
     }
 
     function applyFontSize(fontSize) {
         applyStyle('fontSize', fontSize);
+    }
+
+    function updateCharCount() {
+        const text = editor.innerText;
+        const charCount = text.length;
+        charCounter.textContent = `${charCount}/${maxChars}`;
+        if (charCount > maxChars) {
+            editor.innerText = text.substring(0, maxChars);
+            charCounter.textContent = `${maxChars}/${maxChars}`;
+            alert('Character limit reached');
+        }
     }
 </script>
 </body>
