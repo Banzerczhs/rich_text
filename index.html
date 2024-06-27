@@ -44,8 +44,8 @@
     <div class="color-palette">
         <button onclick="toggleColorPicker()">Text Color</button>
         <div class="color-picker">
-            <input type="color" id="colorInput">
-            <button onclick="confirmTextColor()">Confirm</button>
+            <input type="color" id="colorInput" onchange="confirmTextColor()">
+            <!-- <button onclick="confirmTextColor()">Confirm</button> -->
             <button onclick="cancelTextColor()">Cancel</button>
         </div>
     </div>
@@ -111,22 +111,10 @@
     }
 
     function confirmTextColor() {
-        let curRange=getSelectionRange();
-        if (curRange && editor.contains(curRange.commonAncestorContainer)) {
-            const color = colorInput.value;
-            const span = document.createElement('span');
-            span.style.color = color;
-            span.appendChild(selectedRange.extractContents());
-            selectedRange.insertNode(span);
-
-            selectedRange.selectNodeContents(span);
-            selectedRange.collapse(false);
-
-            restoreSelection();
-            colorPicker.style.display = 'none';
-        } else {
-            alert('Please make a selection within the editor.');
-        }
+        const color = colorInput.value;
+        applyStyle('color',color);
+        console.log('color',colorPicker);
+        colorPicker.style.display = 'none';
     }
 
     function cancelTextColor() {
@@ -134,20 +122,7 @@
     }
 
     function applyFontSize(fontSize) {
-        saveSelection();
-        if (selectedRange && editor.contains(selectedRange.commonAncestorContainer)) {
-            const span = document.createElement('span');
-            span.style.fontSize = fontSize;
-            span.appendChild(selectedRange.extractContents());
-            selectedRange.insertNode(span);
-
-            selectedRange.selectNodeContents(span);
-            selectedRange.collapse(false);
-
-            restoreSelection();
-        } else {
-            alert('Please make a selection within the editor.');
-        }
+        applyStyle('fontSize', fontSize);
     }
 </script>
 </body>
