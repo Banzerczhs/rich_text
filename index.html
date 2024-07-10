@@ -6,11 +6,13 @@
 <title>Rich Text Editor with Color Palette</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
+    .editor-container{
+        position: relative;
+    }
     .editor {
         border: 1px solid #ccc;
         padding: 10px;
         min-height: 200px;
-        position: relative;
     }
     .toolbar {
         display: flex;
@@ -93,12 +95,19 @@
         <option value="20px">20px</option>
     </select>
 </div>
-<div class="editor" contenteditable="true" id="editor" oninput="updateCharCount()">
-    Start typing here...
+<div class="editor-container" id="editor">
+    <div id="editor" class="editor" contenteditable="true" oninput="updateCharCount()">
+        Start typing here...
+    </div>
     <div class="char-counter" id="charCounter">0/5000</div>
 </div>
 
 <script>
+    const NODE_MAP = {
+        TEXT_NODE: 3,
+        ELEMENT_NODE: 1
+    }
+
     const editor = document.getElementById('editor');
     const colorPickerElement = document.getElementById('colorPicker');
     const colorPickerContainer = document.querySelector('.color-picker');
@@ -113,7 +122,9 @@
     });
 
     colorPicker.on('color:change', function(color) {
+        restoreSelection();
         applyStyle('color', color.hexString);
+        saveSelection();
     });
 
     function getSelectionRange() {
@@ -152,7 +163,6 @@
     }
 
     function applyStyle(styleName, value) {
-        restoreSelection();
         let curRange = getSelectionRange();
         if (curRange && editor.contains(curRange.commonAncestorContainer)) {
             const span = document.createElement('span');
@@ -161,10 +171,26 @@
             } else {
                 span.style[styleName] = value;
             }
-            span.appendChild(curRange.extractContents());
-            curRange.insertNode(span);
-            // updateSelectionRange(span);
-            saveSelection();
+            let rangeElem = curRange.extractContents();
+            console.log('----rangeElem----',rangeElem.firstChild);
+            let rangeChildren = Array.from(rangeElem.childNodes);
+            let elementNode = rangeChildren.filter(node=>{
+                console.log('-----node-----',node);
+                if(node.nodeType == NODE_MAP.ELEMENT_NODE){
+                    return node;
+                }
+            })
+
+            console.log('-----rangeChildren------',rangeChildren);
+            curRange.collapse(true);
+            if(elementNode.length){
+                let node = elementNode[0];
+                node.style[styleName] = value;
+                curRange.insertNode(node);
+            }else{
+                span.appendChild(rangeElem);
+                curRange.insertNode(span);
+            }
         } else {
             alert('Please make a selection within the editor.');
         }
