@@ -14,6 +14,10 @@
         padding: 10px;
         min-height: 200px;
     }
+    .editor p{
+        margin: 0px;
+        padding: 0px;
+    }
     .toolbar {
         display: flex;
         flex-wrap: wrap;
@@ -95,10 +99,8 @@
         <option value="20px">20px</option>
     </select>
 </div>
-<div class="editor-container" id="editor">
-    <div id="editor" class="editor" contenteditable="true" oninput="updateCharCount()">
-        Start typing here...
-    </div>
+<div class="editor-container">
+    <div id="editor" class="editor"></div>
     <div class="char-counter" id="charCounter">0/5000</div>
 </div>
 
@@ -113,6 +115,35 @@
     const colorPickerContainer = document.querySelector('.color-picker');
     const charCounter = document.getElementById('charCounter');
     const maxChars = 5000;
+    
+    let richText_paragraph = [{
+        type: 'node',
+        tag: 'p',
+        children: [{
+            type: 'text',
+            value: 'Start typing here...'
+        }]
+    }]
+
+    function renderToEditor(){
+        const render = (data) => {
+            const { type, tag, children } = data;
+            if (type === 'text') {
+                return document.createTextNode(data.value);
+            }
+            const element = document.createElement(tag);
+            children.forEach(child => {
+                element.appendChild(render(child));
+            });
+            return element;
+        }
+        richText_paragraph.forEach(node => {
+            const element = render(node);
+            editor.innerHTML = '';
+            editor.appendChild(element);
+        })
+    }
+    renderToEditor();
 
     let savedRange = null;
 
