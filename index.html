@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rich Text Editor with Color Palette</title>
+<title>Rich Text Editor with Structured Data</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
-    .editor-container{
+    .editor-container {
         position: relative;
     }
     .editor {
@@ -14,7 +14,7 @@
         padding: 10px;
         min-height: 200px;
     }
-    .editor p{
+    .editor p {
         margin: 0px;
         padding: 0px;
     }
@@ -100,22 +100,17 @@
     </select>
 </div>
 <div class="editor-container">
-    <div id="editor" class="editor"></div>
+    <div id="editor" class="editor" contenteditable="true"></div>
     <div class="char-counter" id="charCounter">0/5000</div>
 </div>
 
 <script>
-    const NODE_MAP = {
-        TEXT_NODE: 3,
-        ELEMENT_NODE: 1
-    }
-
     const editor = document.getElementById('editor');
     const colorPickerElement = document.getElementById('colorPicker');
     const colorPickerContainer = document.querySelector('.color-picker');
     const charCounter = document.getElementById('charCounter');
     const maxChars = 5000;
-    
+
     let richText_paragraph = [{
         type: 'node',
         tag: 'p',
@@ -123,48 +118,81 @@
             type: 'text',
             value: 'Start typing here...'
         }]
-    }]
+    }];
 
-    function renderToEditor(){
+    function renderToEditor() {
         const render = (data) => {
-            const { type, tag, children } = data;
+            const { type, tag, children, props } = data;
             if (type === 'text') {
                 return document.createTextNode(data.value);
             }
             const element = document.createElement(tag);
+            if (props) {
+                for (let prop in props) {
+                    element.style[prop] = props[prop];
+                }
+            }
             children.forEach(child => {
                 element.appendChild(render(child));
             });
             return element;
-        }
+        };
+        editor.innerHTML = '';
         richText_paragraph.forEach(node => {
             const element = render(node);
-            editor.innerHTML = '';
             editor.appendChild(element);
-        })
+        });
     }
-    renderToEditor();
 
-    let savedRange = null;
+    function updateStructuredData(node, start, end, style) {
+        const applyStyleToNode = (node, style) => {
+            if (!node.props) {
+                node.props = {};
+            }
+            for (let prop in style) {
+                node.props[prop] = style[prop];
+            }
+        };
 
-    const colorPicker = new iro.ColorPicker("#colorPicker", {
-        width: 150,
-        color: "#f00"
-    });
+        if (node.type === 'text') {
+            if (start === 0 && end === node.value.length) {
+                applyStyleToNode(node, style);
+            } else {
+                const before = { ...node, value: node.value.slice(0, start) };
+                const middle = { ...node, value: node.value.slice(start, end) };
+                const after = { ...node, value: node.value.slice(end) };
 
-    colorPicker.on('color:change', function(color) {
-        restoreSelection();
-        applyStyle('color', color.hexString);
-        saveSelection();
-    });
+                applyStyleToNode(middle, style);
 
-    function getSelectionRange() {
-        let selectedRange = null;
-        const selection = window.getSelection();
-        if (selection.rangeCount > 0) {
-            selectedRange = selection.getRangeAt(0);
+                return [before, middle, after];
+            }
+        } else {
+            node.children = node.children.flatMap(child => {
+                return updateStructuredData(child, start, end, style);
+            });
         }
-        return selectedRange;
+        return [node];
+    }
+
+    function applyStyle(styleName, value) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+        const range = selection.getRangeAt(0);
+        const start = range.startOffset;
+        const end = range.endOffset;
+        const commonAncestorContainer = range.commonAncestorContainer;
+
+        if (!editor.contains(commonAncestorContainer)) {
+            alert('Please make a selection within the editor.');
+            return;
+        }
+
+        richText_paragraph = richText_paragraph.flatMap(node => {
+            return updateStructuredData(node, start, end, { [styleName]: value });
+        });
+
+        renderToEditor();
+        saveSelection();
     }
 
     function saveSelection() {
@@ -182,50 +210,15 @@
         }
     }
 
-    function updateSelectionRange(element) {
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        if (element) {
-            let newRange = document.createRange();
-            newRange.selectNodeContents(element);
-            newRange.collapse();
-            selection.addRange(newRange);
-        }
-    }
+    const colorPicker = new iro.ColorPicker("#colorPicker", {
+        width: 150,
+        color: "#f00"
+    });
 
-    function applyStyle(styleName, value) {
-        let curRange = getSelectionRange();
-        if (curRange && editor.contains(curRange.commonAncestorContainer)) {
-            const span = document.createElement('span');
-            if (styleName === 'textDecoration' && span.style[styleName] !== '') {
-                span.style[styleName] = span.style[styleName].includes(value) ? '' : value;
-            } else {
-                span.style[styleName] = value;
-            }
-            let rangeElem = curRange.extractContents();
-            console.log('----rangeElem----',rangeElem.firstChild);
-            let rangeChildren = Array.from(rangeElem.childNodes);
-            let elementNode = rangeChildren.filter(node=>{
-                console.log('-----node-----',node);
-                if(node.nodeType == NODE_MAP.ELEMENT_NODE){
-                    return node;
-                }
-            })
-
-            console.log('-----rangeChildren------',rangeChildren);
-            curRange.collapse(true);
-            if(elementNode.length){
-                let node = elementNode[0];
-                node.style[styleName] = value;
-                curRange.insertNode(node);
-            }else{
-                span.appendChild(rangeElem);
-                curRange.insertNode(span);
-            }
-        } else {
-            alert('Please make a selection within the editor.');
-        }
-    }
+    colorPicker.on('color:change', function(color) {
+        applyStyle('color', color.hexString);
+        saveSelection();
+    });
 
     function toggleColorPicker() {
         if (colorPickerContainer.style.display === 'none' || colorPickerContainer.style.display === '') {
@@ -253,6 +246,11 @@
             alert('Character limit reached');
         }
     }
+
+    editor.addEventListener('input', updateCharCount);
+    editor.addEventListener('mouseup', saveSelection);
+    editor.addEventListener('keyup', saveSelection);
+
 </script>
 </body>
 </html>
