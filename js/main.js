@@ -3,6 +3,7 @@ import Command from './command/command.js';
 import DTD from './dtd/dtd.js';
 import EventBus from './eventBus/eventBus.js';
 import Range from './range/range.js';
+import { NODE_TO_INDEX } from './const.js';
 
 const editor = document.getElementById('editor');
 const charCounter = document.getElementById('charCounter');
@@ -18,17 +19,30 @@ let richTextState = [
     children: [
       {
         type: 'text',
-        value: 'Start typing here...'
+        value: 'This is a paragraph',
+      },
+      {
+        type: 'text',
+        value: 'some text...',
+        decorate: {
+          bold: true,
+          italic: true,
+          underline: true
+        }
       }
     ]
   }
 ];
 
-function renderToEditor() {
-  const render = (data) => {
+function renderToEditor(nodes) {
+  const render = (data,index) => {
     const { type, tag, children, props } = data;
+    NODE_TO_INDEX.set(node,index);
     if (type === 'text') {
       return document.createTextNode(data.value);
+    }
+    if(type == 'node'){
+      return renderToEditor(data.children);
     }
     const element = document.createElement(tag);
     if (props) {
@@ -42,13 +56,13 @@ function renderToEditor() {
     return element;
   };
   editor.innerHTML = '';
-  richTextState.forEach((node) => {
-    const element = render(node);
+  nodes.forEach((node,index) => {
+    const element = render(node,index);
     editor.appendChild(element);
   });
 }
 
-renderToEditor();
+renderToEditor(richTextState);
 
 const command = new Command(editor, {
   updateStructuredData: (start, end, style) => {

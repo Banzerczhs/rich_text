@@ -19,7 +19,15 @@ class Command {
             return;
         }
 
-        this.state.updateStructuredData(start, end, { [styleName]: value });
+        this.state.updateStructuredData({ 
+            css: {
+                [styleName]: value
+            },
+            rangeInfo: {
+                start,
+                end
+            }
+        });
         this.state.renderToEditor();
         this.range.saveSelection();
     }
