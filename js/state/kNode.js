@@ -1,9 +1,9 @@
 class KNode {
-  constructor(type, tag, value = '', props = {}) {
-    this.type = type;
-    this.tag = tag;
-    this.value = value;
-    this.props = props;
+  constructor(data) {
+    this.type = data.type;
+    this.tag = data.tag;
+    this.value = data.value;
+    this.props = data.props;
     this.children = [];
   }
 

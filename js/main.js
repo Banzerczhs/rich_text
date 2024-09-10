@@ -4,8 +4,9 @@ import DTD from './dtd/dtd.js';
 import EventBus from './eventBus/eventBus.js';
 import Range from './range/range.js';
 import { NODE_TO_INDEX } from './const.js';
+import editor from './state/editor.js';
 
-const editor = document.getElementById('editor');
+const editorRef = document.getElementById('editor');
 const charCounter = document.getElementById('charCounter');
 const maxChars = 5000;
 const eventBus = new EventBus();
@@ -35,31 +36,8 @@ let richTextState = [
 ];
 
 function renderToEditor(nodes) {
-  const render = (data,index) => {
-    const { type, tag, children, props } = data;
-    NODE_TO_INDEX.set(node,index);
-    if (type === 'text') {
-      return document.createTextNode(data.value);
-    }
-    if(type == 'node'){
-      return renderToEditor(data.children);
-    }
-    const element = document.createElement(tag);
-    if (props) {
-      for (let prop in props) {
-        element.style[prop] = props[prop];
-      }
-    }
-    children.forEach((child) => {
-      element.appendChild(render(child));
-    });
-    return element;
-  };
-  editor.innerHTML = '';
-  nodes.forEach((node,index) => {
-    const element = render(node,index);
-    editor.appendChild(element);
-  });
+  NODE_TO_INDEX.set(editor,0);
+  
 }
 
 renderToEditor(richTextState);
