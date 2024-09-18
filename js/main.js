@@ -3,8 +3,8 @@ import Command from './command/command.js';
 import DTD from './dtd/dtd.js';
 import EventBus from './eventBus/eventBus.js';
 import Range from './range/range.js';
-import { NODE_TO_INDEX } from './const.js';
 import editor from './state/editor.js';
+import renderChildren from './state/children.js';
 
 const editorRef = document.getElementById('editor');
 const charCounter = document.getElementById('charCounter');
@@ -34,23 +34,6 @@ let richTextState = [
     ]
   }
 ];
-
-function renderToEditor(nodes) {
-  NODE_TO_INDEX.set(editor,0);
-  
-}
-
-renderToEditor(richTextState);
-
-const command = new Command(editor, {
-  updateStructuredData: (start, end, style) => {
-    // Your logic to update the structured data
-  },
-  renderToEditor,
-  insertNodeAtRange: (node, range) => {
-    // Your logic to insert a node at the given range
-  }
-});
 
 function bindEventListeners() {
   document
@@ -93,6 +76,36 @@ function bindEventListeners() {
   editor.addEventListener('keyup', () => command.saveSelection());
 }
 
+function initializeValue(value) {
+  editor.children = value;
+}
+
+function renderToEditor(nodes) {
+  renderChildren({
+    nodes,
+    renderElement,
+    renderLeaf
+  });
+}
+
+function initializeEditor() {
+  initializeValue(richTextState)
+  bindEventListeners();
+
+  renderToEditor();
+}
+
+initializeEditor();
+
+const command = new Command(editor, {
+  updateStructuredData: (start, end, style) => {
+    // Your logic to update the structured data
+  },
+  insertNodeAtRange: (node, range) => {
+    // Your logic to insert a node at the given range
+  }
+});
+
 function toggleColorPicker() {
   const colorPickerContainer = document.querySelector('.color-picker');
   if (
@@ -120,4 +133,10 @@ function updateCharCount() {
   }
 }
 
-bindEventListeners();
+function renderElement(node) {
+  let tag = node.tag;
+}
+
+function renderLeaf(){
+  
+}
