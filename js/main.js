@@ -1,4 +1,3 @@
-import KNode from './state/kNode.js';
 import Command from './command/command.js';
 import DTD from './dtd/dtd.js';
 import EventBus from './eventBus/eventBus.js';
@@ -71,21 +70,23 @@ function bindEventListeners() {
     }
   });
 
-  editor.addEventListener('input', updateCharCount);
-  editor.addEventListener('mouseup', () => command.saveSelection());
-  editor.addEventListener('keyup', () => command.saveSelection());
+  editorRef.addEventListener('input', updateCharCount);
+  editorRef.addEventListener('mouseup', () => command.saveSelection());
+  editorRef.addEventListener('keyup', () => command.saveSelection());
 }
 
 function initializeValue(value) {
   editor.children = value;
 }
 
-function renderToEditor(nodes) {
-  renderChildren({
-    nodes,
+function renderToEditor() {
+  let children = renderChildren({
+    editor,
     renderElement,
     renderLeaf
   });
+
+  editorRef.appendChild(children);
 }
 
 function initializeEditor() {
@@ -133,10 +134,43 @@ function updateCharCount() {
   }
 }
 
-function renderElement(node) {
-  let tag = node.tag;
+function renderElement({element,children}) {
+  let tag = element.tag;
+  let node = null;
+  switch (tag) {
+    case 'p': {
+      node = dddocment.createElement('p');
+      node.appendChild(children);
+      return 
+    }
+    case 'div':
+      return document.createElement('div');
+    case 'h1':
+      return document.createElement('h1');
+  }
 }
 
-function renderLeaf(){
+function renderLeaf(node){
+  let span = document.createElement('span');
+  let decorate = node.decorate;
+  let children = node.value;
   
+  if (decorate.bold) {
+    children = <strong>{children}</strong>
+  }
+
+  if (decorate.code) {
+    children = <code>{children}</code>
+  }
+
+  if (decorate.italic) {
+    children = <em>{children}</em>
+  }
+
+  if (decorate.underline) {
+    children = <u>{children}</u>
+  }
+
+  span.appendChild(children);
+  return span;
 }
