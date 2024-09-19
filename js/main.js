@@ -4,6 +4,7 @@ import EventBus from './eventBus/eventBus.js';
 import Range from './range/range.js';
 import editor from './state/editor.js';
 import renderChildren from './state/children.js';
+import KNode from "./slate/knode";
 
 const editorRef = document.getElementById('editor');
 const charCounter = document.getElementById('charCounter');
@@ -139,9 +140,9 @@ function renderElement({element,children}) {
   let node = null;
   switch (tag) {
     case 'p': {
-      node = dddocment.createElement('p');
-      node.appendChild(children);
-      return 
+      node = new KNode(element)
+      node.addChild(children);
+      return node;
     }
     case 'div':
       return document.createElement('div');

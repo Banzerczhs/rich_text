@@ -1,5 +1,4 @@
 import renderChildren from "./children";
-import KNode from "./knode";
 
 function element({
   node,
