@@ -1,4 +1,4 @@
-import renderChildren from "./children";
+import renderChildren from "./children.js";
 
 function element({
   node,

@@ -4,5 +4,7 @@
 			"path": "/Users/chenyi/Desktop/work-data/rich_text"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"openctx.enable": true
+	}
 }

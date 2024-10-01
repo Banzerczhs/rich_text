@@ -4,7 +4,6 @@ import EventBus from './eventBus/eventBus.js';
 import Range from './range/range.js';
 import editor from './state/editor.js';
 import renderChildren from './state/children.js';
-import KNode from "./slate/knode";
 
 const editorRef = document.getElementById('editor');
 const charCounter = document.getElementById('charCounter');
@@ -82,12 +81,13 @@ function initializeValue(value) {
 
 function renderToEditor() {
   let children = renderChildren({
-    editor,
+    node: editor,
     renderElement,
     renderLeaf
   });
-
-  editorRef.appendChild(children);
+  
+  console.log('----children----',children);
+  // editorRef.appendChild(children);
 }
 
 function initializeEditor() {
@@ -140,15 +140,20 @@ function renderElement({element,children}) {
   let node = null;
   switch (tag) {
     case 'p': {
-      node = new KNode(element)
-      node.addChild(children);
-      return node;
-    }
-    case 'div':
-      return document.createElement('div');
-    case 'h1':
-      return document.createElement('h1');
+      node = document.createElement('p');
+      node.appendChild(children);
+    };break;
+    case 'div':{
+      node = document.createElement('div');
+      node.appendChild(children);
+    };break;
+    case 'h1':{
+      node = document.createElement('h1');
+      node.appendChild(children);
+    };break;
   }
+
+  return node;
 }
 
 function renderLeaf(node){
@@ -157,21 +162,21 @@ function renderLeaf(node){
   let children = node.value;
   
   if (decorate.bold) {
-    children = <strong>{children}</strong>
+    children = `<strong>${children}</strong>`
   }
 
   if (decorate.code) {
-    children = <code>{children}</code>
+    children = `<code>${children}</code>`
   }
 
   if (decorate.italic) {
-    children = <em>{children}</em>
+    children = `<em>${children}</em>`
   }
 
   if (decorate.underline) {
-    children = <u>{children}</u>
+    children = `<u>${children}</u>`
   }
 
-  span.appendChild(children);
+  span.innerHTML = children;
   return span;
 }

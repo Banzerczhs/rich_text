@@ -1,4 +1,4 @@
-import { NODE_TO_INDEX } from '../const.js';
+import { NODE_TO_INDEX, NODE_TO_PARENT } from '../const.js';
 import element from './element.js';
 
 function renderChildren({ node, renderElement, renderLeaf }) {
