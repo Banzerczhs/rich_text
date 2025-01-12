@@ -14,3 +14,7 @@ function useState(initialValue) {
   hookIndex++;  // Hook 索引前进
   return [hookStates[currentIndex], setState];
 }
+
+function render() {
+  throw new Error("Function not implemented.");
+}

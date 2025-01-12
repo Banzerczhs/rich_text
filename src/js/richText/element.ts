@@ -2,7 +2,8 @@ import renderChildren from "./children.js";
 
 function element({
   node,
-  renderElement
+  renderElement,
+  renderLeaf
 }){
   let children = renderChildren({
     node,
@@ -10,9 +11,14 @@ function element({
     renderLeaf
   });
 
+  const attributes = {
+    'data-slate-node': 'element',
+  }
+
   return renderElement({
     element: node,
-    children
+    children,
+    attributes
   });
 }
 

@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "rich_text",
   "main": "index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "webpack-dev-server --progress",
+    "start": "vite",
     "build": "webpack"
   },
   "repository": {
@@ -15,12 +16,19 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "webpack": "^5.95.0"
+    "typescript": "^5.7.2",
+    "vite": "^6.0.4"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@vitejs/plugin-react": "^4.3.4",
     "babel-loader": "^9.2.1",
+    "css-loader": "^7.1.2",
     "html-webpack-plugin": "^5.6.0",
-    "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.1.0"
+    "mini-css-extract-plugin": "^2.9.1",
+    "sass": "^1.79.4",
+    "sass-loader": "^16.0.2",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.1"
   }
 }

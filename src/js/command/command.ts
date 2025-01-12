@@ -1,10 +1,10 @@
-import Range from '../range/range.js';
+import Range from '../range';
 
 class Command {
     constructor(editor, state) {
         this.editor = editor;
         this.state = state;
-        this.range = new Range();
+        this.range = Range;
     }
 
     applyStyle(styleName, value) {

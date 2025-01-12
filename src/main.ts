@@ -1,16 +1,19 @@
-import Command from './command/command.js';
-import DTD from './dtd/dtd.js';
-import EventBus from './eventBus/eventBus.js';
-import Range from './range/range.js';
-import editor from './state/editor.js';
-import renderChildren from './state/children.js';
+import Command from './js/command/command';
+import EventBus from './js/eventBus/eventBus';
+import EditorRange from './js/range';
+import Editor from './js/richText/create-editor';
+import renderChildren from './js/richText/children';
+import * as editorOperate from "./js/editor";
 
-const editorRef = document.getElementById('editor');
+import "./css/index.scss";
+import { EDITOR_TO_ELEMENT, ELEMENT_TO_NODE } from './js/const.js';
+
+
+const editorRef = document.getElementById('editor') as HTMLElement;
 const charCounter = document.getElementById('charCounter');
 const maxChars = 5000;
 const eventBus = new EventBus();
-const dtd = new DTD();
-const range = new Range();
+const editor = Editor();
 
 let richTextState = [
   {
@@ -33,6 +36,33 @@ let richTextState = [
     ]
   }
 ];
+
+
+
+function scheduleOnDOMSelectionChange(event){
+  let domSelection = document.getSelection();
+
+  if(!domSelection){
+    return;
+  }
+
+  let {anchorNode, focusNode} = domSelection;
+
+  let anchorNodeSelectable = editorRef.contains(anchorNode) && anchorNode instanceof window.Node && editorRef.isContentEditable;
+  let focusNodeInEditor = editorRef.contains(focusNode) && focusNode instanceof window.Node;
+
+
+  ELEMENT_TO_NODE.set(editorRef,editor);
+  if (anchorNodeSelectable && focusNodeInEditor) {
+    const rangeInfo = EditorRange.formatRange(editor, domSelection, {
+      exactMatch: false
+    })
+
+    if (rangeInfo) {
+      editorOperate.select(editor, rangeInfo);
+    }
+  }
+}
 
 function bindEventListeners() {
   document
@@ -70,6 +100,7 @@ function bindEventListeners() {
     }
   });
 
+  document.addEventListener('selectionchange', scheduleOnDOMSelectionChange);
   editorRef.addEventListener('input', updateCharCount);
   editorRef.addEventListener('mouseup', () => command.saveSelection());
   editorRef.addEventListener('keyup', () => command.saveSelection());
@@ -86,8 +117,13 @@ function renderToEditor() {
     renderLeaf
   });
   
-  console.log('----children----',children);
-  // editorRef.appendChild(children);
+  EDITOR_TO_ELEMENT.set(editor,editorRef);
+
+  children.forEach(child=>{
+    editorRef.appendChild(child);
+  })
+
+  editorRef.focus();
 }
 
 function initializeEditor() {
@@ -95,16 +131,20 @@ function initializeEditor() {
   bindEventListeners();
 
   renderToEditor();
+  scheduleOnDOMSelectionChange();
 }
 
 initializeEditor();
 
-const command = new Command(editor, {
+const command = new Command(editorRef, {
   updateStructuredData: (start, end, style) => {
     // Your logic to update the structured data
   },
   insertNodeAtRange: (node, range) => {
     // Your logic to insert a node at the given range
+  },
+  renderToEditor: (node,range) => {
+    
   }
 });
 
@@ -125,7 +165,7 @@ function cancelTextColor() {
 }
 
 function updateCharCount() {
-  const text = editor.innerText;
+  const text = editorRef.innerText;
   const charCount = text.length;
   charCounter.textContent = `${charCount}/${maxChars}`;
   if (charCount > maxChars) {
@@ -135,30 +175,39 @@ function updateCharCount() {
   }
 }
 
-function renderElement({element,children}) {
+function renderElement({element,children,attributes}) {
   let tag = element.tag;
   let node = null;
   switch (tag) {
     case 'p': {
       node = document.createElement('p');
-      node.appendChild(children);
     };break;
     case 'div':{
       node = document.createElement('div');
-      node.appendChild(children);
     };break;
     case 'h1':{
       node = document.createElement('h1');
-      node.appendChild(children);
     };break;
   }
 
+  if(node){
+    for(let key in attributes){
+      node.setAttribute(key,attributes[key]);
+    }
+  
+    children.forEach(child=>{
+      if(child){
+        node.appendChild(child);
+      }
+    })  
+  }
+  
   return node;
 }
 
 function renderLeaf(node){
   let span = document.createElement('span');
-  let decorate = node.decorate;
+  let decorate = node.decorate || {};
   let children = node.value;
   
   if (decorate.bold) {
